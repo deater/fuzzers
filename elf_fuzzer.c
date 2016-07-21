@@ -7,7 +7,21 @@
 
 #include <sys/wait.h>
 
-int randomize_magic(int fd) {
+
+/* /usr/include/asm-generic/errno-base.h */
+static int print_error_name(int which) {
+
+	switch(which) {
+		case 2:		printf("ENOENT"); break;
+		case 8:		printf("ENOXEC"); break;
+		default:	printf("UNKNOWN(%d)",which);
+				break;
+	}
+	return 0;
+
+}
+
+static int randomize_magic(int fd) {
 
 #define MAGIC_SIZE 8192
 
@@ -55,6 +69,8 @@ int randomize_magic(int fd) {
 	return 0;
 }
 
+#define MAX_FAILS 255
+
 int main(int argc, char **argv) {
 
 	int fd;
@@ -63,10 +79,12 @@ int main(int argc, char **argv) {
 	int success=0,fail=0;
 	int result;
 	int run=0;
+	int fail_type[MAX_FAILS],i;
 
 	char *newargv[] = { NULL, "hello", "world", NULL };
 	char *newenviron[] = { NULL };
 
+	for(i=0;i<MAX_FAILS;i++) fail_type[i]=0;
 
 	while(1) {
 
@@ -108,15 +126,22 @@ int main(int argc, char **argv) {
 				success++;
 			}
 			else {
-				printf("%s\n",strerror(result));
+//				printf("%s\n",strerror(result));
+				fail_type[result]++;
 				fail++;
 			}
 
 		}
 		run++;
-		if (run>10) break;
+		if (run>=1024) break;
 	}
 	printf("%d success, %d fail\n",success,fail);
-
+	for(i=0;i<MAX_FAILS;i++) {
+		if (fail_type[i]!=0) {
+			print_error_name(i);
+			printf(":\t%d (%s)\n",
+				fail_type[i],strerror(i));
+		}
+	}
 	return 0;
 }
