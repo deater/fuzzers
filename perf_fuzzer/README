@@ -1,0 +1,5 @@
+My perf_fuzzer actually lives in my perf_event_tests tree
+
+	git clone https://www.github.com/deater/perf_event_tests/
+
+in the ./fuzzer directory
