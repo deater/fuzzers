@@ -120,7 +120,7 @@ int get_random_file(char *string, int size, int type) {
 
 		directory=opendir(string);
 		if (directory==NULL) {
-			printf("Error! %s\n",strerror(errno));
+			//printf("Error! %s\n",strerror(errno));
 			return 0;
 		}
 

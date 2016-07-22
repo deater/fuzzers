@@ -19,6 +19,8 @@ static int print_error_name(int which) {
 	switch(which) {
 		case 2:		printf("ENOENT"); break;
 		case 8:		printf("ENOXEC"); break;
+		case 13:	printf("EACCES"); break;
+		case 20:	printf("ENOTDIR"); break;
 		default:	printf("UNKNOWN(%d)",which);
 				break;
 	}
@@ -83,51 +85,126 @@ static int randomize_elf(int fd) {
 	return 0;
 }
 
+#define WHITESPACE_SIZE	5000
+static char whitespace[WHITESPACE_SIZE];
+
+static int insert_whitespace(int fd) {
+
+	int length=0,i;
+
+	whitespace[0]=0;
+
+	switch(rand()%4) {
+		case 0:	length=0;	break;
+		case 1:	length=1;	break;
+		case 2:	length=rand()%16;	break;
+		case 3:	length=rand()%WHITESPACE_SIZE;	break;
+		default:	length=0;	break;
+
+	}
+
+	for(i=0;i<length;i++) {
+		switch(rand()%5) {
+			case 0:	whitespace[i]=' '; break;
+			case 1: whitespace[i]='\t'; break;
+			case 2: whitespace[i]='\r'; break;
+			case 3: whitespace[i]='\n'; break;
+			default: whitespace[i]=' '; break;
+		}
+	}
+	whitespace[i]=0;
+
+	write(fd,whitespace,strlen(whitespace));
+
+	return 0;
+
+}
+
+int string_corrupt(char *string) {
+
+	int number,i,which,len;
+
+	len=strlen(string);
+
+	switch(rand()%4) {
+		case 0:	number=1; break;
+		case 1: number=rand()%4; break;
+		case 2: number=rand()%len; break;
+		default:	number=0; break;
+	}
+
+	for(i=0;i<number;i++) {
+		which=rand()%len;
+		switch(rand()%4) {
+			case 0:	string[which]|=(1<<rand()%8);
+			case 1: string[which]&=~(1<<rand()%8);
+			case 2:	string[which]=rand();
+			default:	break;
+		}
+	}
+
+	return 0;
+}
+
+
+#define FILENAME_SIZE 20000
+static char filename[FILENAME_SIZE];
+
 static int randomize_shebang(int fd) {
 
-#define MAGIC_SIZE 8192
+	int num_args,i,rand_length;
 
-	char magic[MAGIC_SIZE];
-	int which,i;
+	write(fd,"#",1);
 
-	which=rand()%32;
+	if (rand()%2) insert_whitespace(fd);
 
-	/* No magic at all */
-	if (which==0) {
-		return 0;
+	write(fd,"!",1);
+
+	if (rand()%2) insert_whitespace(fd);
+
+	switch(rand()%4) {
+		case 0:	get_random_shell(filename, FILENAME_SIZE);
+			break;
+		case 1:	get_random_file(filename, FILENAME_SIZE, RANDOM_FILE_RANDOM);
+			break;
+		case 2:	get_random_file(filename, FILENAME_SIZE, RANDOM_FILE_SYSTEM);
+			break;
+		case 3:	get_random_file(filename, FILENAME_SIZE, RANDOM_FILE_EXECUTABLE);
+			break;
 	}
-	/* Completely random magic */
-	else if (which==1) {
-		for(i=0;i<MAGIC_SIZE;i++) {
-			magic[i]=rand();
+
+	/* Possibly corrupt filename */
+	if (rand()%10==1) string_corrupt(filename);
+
+	/* Write out filename */
+	write(fd,filename,strlen(filename));
+
+	if (rand()%2) insert_whitespace(fd);
+
+	/* random number of command line args */
+	switch(rand()%3) {
+		case 0:	num_args=0; break;
+		case 1:	num_args=rand()%4; break;
+		case 2: num_args=rand()%20000; break;
+		default:	num_args=0; break;
+	}
+
+	for(i=0;i<num_args;i++) {
+		get_random_file(filename, FILENAME_SIZE, RANDOM_FILE_RANDOM);
+		write(fd,filename,strlen(filename));
+
+		insert_whitespace(fd);
+	}
+
+	/* write random data */
+	if (rand()%2) {
+		rand_length=rand()%FILENAME_SIZE;
+		for(i=0;i<rand_length;i++) {
+			filename[i]=rand();
 		}
-		write(fd,magic,rand()%MAGIC_SIZE);
-		return 0;
-	/* Size 4 random magic */
-	} else if (which==2) {
-		for(i=0;i<4;i++) {
-			magic[i]=rand();
-		}
-		write(fd,magic,4);
-		return 0;
+		write(fd,filename,rand_length);
 	}
-	/* #! magic */
-	else if (which==3) {
-		for(i=0;i<MAGIC_SIZE;i++) {
-			magic[i]=rand();
-		}
-		magic[0]='#';
-		magic[1]='!';
-		write(fd,magic,rand()%MAGIC_SIZE);
-		return 0;
-	}
-	else {
-		magic[0]=0x7f;
-		magic[1]='E';
-		magic[2]='L';
-		magic[3]='F';
-		write(fd,magic,4);
-	}
+
 	return 0;
 }
 
