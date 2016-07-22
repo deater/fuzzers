@@ -132,6 +132,8 @@ int get_random_file(char *string, int size, int type) {
 		}
 		//printf("Found %d entries\n",num_entries);
 
+		if (num_entries==0) return 0;
+
 		rewinddir(directory);
 
 		which_one=rand()%num_entries;
