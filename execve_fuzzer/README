@@ -2,6 +2,10 @@ execve_fuzzer
 
 fuzzes the execve system call
 
+Need to install libbsd for strlcpy()
+
+	apt-get install libbsd-dev
+
 *** WARNING ***
 
 This program will cause random executables on your system to be run

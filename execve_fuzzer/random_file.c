@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <bsd/bsd.h>
+
 #include "random_file.h"
 
 #define NUM_SHELLS 12
@@ -47,12 +49,12 @@ int get_random_shell(char *string, int size) {
 
 	which_prefix=rand()%NUM_EXE_PREFIXES;
 
-	strncpy(string,exe_prefixes[which_prefix],size);
+	strlcpy(string,exe_prefixes[which_prefix],size);
 
 
 	which_shell=rand()%NUM_SHELLS;
 
-	strncat(string,shell_names[which_shell],size);
+	strlcat(string,shell_names[which_shell],size);
 
 	return 0;
 
@@ -91,15 +93,15 @@ int get_random_file(char *string, int size, int type) {
 
 	if (type==RANDOM_FILE_SYSTEM) {
 		root_num=rand()%NUM_SYSTEM_ROOTS;
-		strncpy(string,system_roots[root_num],size);
+		strlcpy(string,system_roots[root_num],size);
 	}
 	if (type==RANDOM_FILE_EXECUTABLE) {
 		root_num=rand()%NUM_EXE_PREFIXES;
-		strncpy(string,exe_prefixes[root_num],size);
+		strlcpy(string,exe_prefixes[root_num],size);
 	}
 	if (type==RANDOM_FILE_RANDOM) {
 		root_num=rand()%NUM_ROOTS;
-		strncpy(string,random_roots[root_num],size);
+		strlcpy(string,random_roots[root_num],size);
 	}
 
 
@@ -141,8 +143,8 @@ int get_random_file(char *string, int size, int type) {
 		while(1) {
 			entry=readdir(directory);
 			if (num_entries==which_one) {
-				strncat(string,"/",size);
-				strncat(string,entry->d_name,size);
+				strlcat(string,"/",size);
+				strlcat(string,entry->d_name,size);
 				break;
 			}
 			num_entries++;

@@ -369,8 +369,11 @@ int main(int argc, char **argv) {
 				if (errno==EAGAIN) {
 					timeout=1;
 				}
-				printf("ERROR! sigtimedwait: %s\n", strerror(errno));
-				exit(1);
+				else {
+					printf("ERROR! sigtimedwait: %d: %s\n",
+						errno, strerror(errno));
+					exit(1);
+				}
 			} else {
 //				printf("received signal %i from %i with status %i\n", 
 //					signal_result, wait_info.si_pid, wait_info.si_status);

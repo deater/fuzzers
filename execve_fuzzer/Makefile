@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -Wall -g
-LFLAGS =
+LFLAGS = -lbsd
 
 all:	execve_fuzzer
 
