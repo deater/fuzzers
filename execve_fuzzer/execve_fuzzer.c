@@ -229,8 +229,8 @@ int main(int argc, char **argv) {
 
 	int fd;
 	pid_t child;
-	int wstatus;
-	int success=0,fail=0;
+	//int wstatus;
+	int success=0,fail=0,hung=0;
 	int result;
 	int run=0;
 	int fail_type[MAX_FAILS],i;
@@ -238,11 +238,27 @@ int main(int argc, char **argv) {
 	struct utsname uname_info;
 	int type=0;
 
+	struct timespec wait_timeout;
+	sigset_t wait_set,block_set;
+	siginfo_t wait_info;
+	int signal_result;
+
 	char *newargv[] = { NULL, "hello", "world", NULL };
 	char *newenviron[] = { NULL };
 
 	/* Init variables */
 	for(i=0;i<MAX_FAILS;i++) fail_type[i]=0;
+	wait_timeout.tv_sec=5;
+	wait_timeout.tv_nsec=0;
+
+	sigemptyset(&block_set);
+	sigaddset(&block_set, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &block_set, NULL);
+
+	sigemptyset(&wait_set);
+	sigaddset(&wait_set, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &block_set, NULL);
+
 
 	/* Parse command line args */
 	if (argc>1) {
@@ -340,7 +356,40 @@ int main(int argc, char **argv) {
 			return errno;
 		}
 		else {
+
+			signal_result=sigtimedwait(&wait_set,
+					&wait_info,
+					&wait_timeout);
+
+			if (signal_result == -1) {
+				printf("ERROR! sigtimedwait: %s\n", strerror(errno));
+				exit(1);
+			} else {
+				printf("received signal %i from %i with status %i\n", 
+					signal_result, wait_info.si_pid, wait_info.si_status);
+			}
+
+			if (signal_result==EAGAIN) {
+				printf("Timeout!\n");
+				kill(child,SIGKILL);
+				hung++;
+			}
+			else {
+				result=wait_info.si_status;
+				if (result==0) {
+					success++;
+				}
+				else {
+					if (result<255) fail_type[result]++;
+					else {
+						printf("Error! Result too big!\n");
+						}
+					fail++;
+				}
+			}
+#if 0
 			waitpid(child,&wstatus,0);
+
 			result=WEXITSTATUS(wstatus);
 			if (WIFEXITED(wstatus) && (result==0)) {
 				success++;
@@ -350,13 +399,14 @@ int main(int argc, char **argv) {
 				fail_type[result]++;
 				fail++;
 			}
+#endif
 
 		}
 		run++;
 		if (run%2000==0) {
 
-			printf("After %d: %d success, %d fail\n",
-				run,success,fail);
+			printf("After %d: %d success, %d fail, %d hung\n",
+				run,success,fail,hung);
 			for(i=0;i<MAX_FAILS;i++) {
 				if (fail_type[i]!=0) {
 					printf("\t");
