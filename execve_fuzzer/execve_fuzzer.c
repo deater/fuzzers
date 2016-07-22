@@ -17,6 +17,7 @@
 static int print_error_name(int which) {
 
 	switch(which) {
+		case 1:		printf("EPERM");  break;
 		case 2:		printf("ENOENT"); break;
 		case 8:		printf("ENOXEC"); break;
 		case 13:	printf("EACCES"); break;
