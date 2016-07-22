@@ -1,4 +1,18 @@
-elf_fuzzer
+execve_fuzzer
 
-fuzzes elfs
+fuzzes the execve system call
+
+*** WARNING ***
+
+This program will cause random executables on your system to be run
+with random arguments.
+
+There is a chance it might do something unfortunate, such as run
+"rm" on an important file, or run "lpr" on a document that will
+crash your printer, etc.
+
+So it is advisable to either set up a dummy account or else run inside 
+of Qemu or some other sandbox
+
+*** END WARNING ***
 
