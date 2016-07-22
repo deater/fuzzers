@@ -244,6 +244,7 @@ int main(int argc, char **argv) {
 	sigset_t wait_set,block_set;
 	siginfo_t wait_info;
 	int signal_result;
+	int timeout=0;
 
 	char *newargv[] = { NULL, "hello", "world", NULL };
 	char *newenviron[] = { NULL };
@@ -364,6 +365,9 @@ int main(int argc, char **argv) {
 					&wait_timeout);
 
 			if (signal_result == -1) {
+				if (errno==EAGAIN) {
+					timeout=1;
+				}
 				printf("ERROR! sigtimedwait: %s\n", strerror(errno));
 				exit(1);
 			} else {
@@ -371,7 +375,8 @@ int main(int argc, char **argv) {
 					signal_result, wait_info.si_pid, wait_info.si_status);
 			}
 
-			if (signal_result==EAGAIN) {
+			if (timeout) {
+				timeout=0;
 				printf("Timeout!\n");
 				kill(child,SIGKILL);
 				hung++;
