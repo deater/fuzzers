@@ -10,8 +10,56 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "random_file.h"
+
+#define NUM_SHELLS 12
+static char shell_names[NUM_SHELLS][20]={
+	"sh",
+	"bash",
+	"dash",
+	"zsh",
+	"csh",
+	"tcsh",
+	"ksh",
+	"pdksh",
+	"python",
+	"python2",
+	"perl",
+	"perl6",
+};
+
+#define NUM_EXE_PREFIXES 9
+static char exe_prefixes[NUM_EXE_PREFIXES][20]={
+	"/bin/",
+	"/sbin/",
+	"/usr/bin/",
+	"/usr/sbin/",
+	"/usr/local/bin/",
+	"/usr/local/sbin/",
+	"/opt/bin/",
+	"/",
+	"./",
+};
+
+int get_random_shell(char *string, int size) {
+
+	int which_prefix,which_shell;
+
+	which_prefix=rand()%NUM_EXE_PREFIXES;
+
+	strncpy(string,exe_prefixes[which_prefix],size);
+
+
+	which_shell=rand()%NUM_SHELLS;
+
+	strncat(string,shell_names[which_shell],size);
+
+	return 0;
+
+}
+
 #define NUM_ROOTS 7
-char random_roots[NUM_ROOTS][10]={
+static char random_roots[NUM_ROOTS][10]={
 	"/",
 	"//",
 	"///",
@@ -21,9 +69,19 @@ char random_roots[NUM_ROOTS][10]={
 	"../../.."
 };
 
+#define NUM_SYSTEM_ROOTS 5
+static char system_roots[NUM_SYSTEM_ROOTS][10]={
+	"/proc/",
+	"/dev/",
+	"/sys/",
+	"/debug/",
+	"/",
+};
+
 #define MAX_DEPTH 16
 
-int get_file_random(char *string, int size) {
+
+int get_random_file(char *string, int size, int type) {
 
 	int root_num,depth,current_depth=0,which_one;
 	int result,num_entries;
@@ -31,10 +89,22 @@ int get_file_random(char *string, int size) {
 	DIR *directory;
 	struct dirent *entry;
 
-	root_num=rand()%NUM_ROOTS;
-	depth=rand()%MAX_DEPTH;
+	if (type==RANDOM_FILE_SYSTEM) {
+		root_num=rand()%NUM_SYSTEM_ROOTS;
+		strncpy(string,system_roots[root_num],size);
+	}
+	if (type==RANDOM_FILE_EXECUTABLE) {
+		root_num=rand()%NUM_EXE_PREFIXES;
+		strncpy(string,exe_prefixes[root_num],size);
+	}
+	if (type==RANDOM_FILE_RANDOM) {
+		root_num=rand()%NUM_ROOTS;
+		strncpy(string,random_roots[root_num],size);
+	}
 
-	strncpy(string,random_roots[root_num],size);
+
+
+	depth=rand()%MAX_DEPTH;
 
 	while(1) {
 		result=stat(string,&stat_buf);
@@ -85,7 +155,10 @@ int get_file_random(char *string, int size) {
 	return 0;
 }
 
-char filename[BUFSIZ];
+#if 0
+
+
+static char filename[BUFSIZ];
 
 int main(int argc, char **argv) {
 
@@ -96,10 +169,12 @@ int main(int argc, char **argv) {
 	srand(time(NULL));
 
 	for(i=0;i<10;i++) {
-		get_file_random(filename, BUFSIZ);
+		get_random_file(filename, BUFSIZ, RANDOM_FILE_EXECUTABLE);
 
 		printf("Found: %s\n",filename);
 	}
 
 	return 0;
 }
+
+#endif
