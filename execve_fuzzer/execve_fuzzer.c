@@ -122,9 +122,11 @@ static int insert_whitespace(int fd) {
 
 int string_corrupt(char *string) {
 
-	int number,i,which,len;
+	int number=0,i,which,len;
 
 	len=strlen(string);
+
+	if (len==0) return 0;
 
 	switch(rand()%4) {
 		case 0:	number=1; break;
